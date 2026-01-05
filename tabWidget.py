@@ -15,6 +15,14 @@ WINDOW_TITLE = "Test Main Window"
 OBJECT_NAME = "testMainWindow"
 
 class CollapsibleFrame(QtWidgets.QWidget):
+    """
+    折りたたみ可能なフレームウィジェット。
+    
+    ・タイトルバー付きのフレームで、クリックで展開/折りたたみが可能
+    ・アニメーションやアイコン、タイトル・フレームのカスタマイズに対応
+    ・内部に任意のウィジェットを追加できる
+    ・展開/折りたたみ時にtoggledシグナルを発行
+    """
     toggled = QtCore.Signal(bool)  # 展開/折りたたみ時に発信されるシグナル
 
     kAlignLeft      = 0
@@ -35,6 +43,13 @@ class CollapsibleFrame(QtWidgets.QWidget):
     # override method
     # ------------------------------
     def __init__(self, title="Title", color=QtGui.QColor(187, 187, 187), parent=None):
+        """
+        CollapsibleFrameの初期化。
+        Args:
+            title (str): タイトルバーのテキスト
+            color (QColor): タイトルの色
+            parent (QWidget): 親ウィジェット
+        """
         super(CollapsibleFrame, self).__init__(parent)
         self._title                 = title
         self._title_color           = color
@@ -87,12 +102,21 @@ class CollapsibleFrame(QtWidgets.QWidget):
         self.icon_animation.valueChanged.connect(self._updateIconRotation)
 
     def mousePressEvent(self, event):
+        """
+        タイトルバークリックで展開・折りたたみを切り替える。
+        Args:
+            event (QMouseEvent): マウスイベント
+        """
         """タイトルバーのクリックで展開・折りたたみ"""
         if event.pos().y() < self._title_bar_height and self._is_collapsable:
             self._toggle()
 
     def paintEvent(self, event):
-        """カスタム描画（タイトルバー + 三角形アイコン）"""
+        """
+        タイトルバーとアイコンのカスタム描画。
+        Args:
+            event (QPaintEvent): ペイントイベント
+        """
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
 
@@ -107,7 +131,7 @@ class CollapsibleFrame(QtWidgets.QWidget):
             font.setBold(True)
             painter.setFont(font)
             font_metrics = QtGui.QFontMetrics(font)
-            text_width = font_metrics.horizontalAdvance(self._title)
+            text_width = self._text_width(font_metrics, self._title)
             
             # タイトル位置
             rect = self.rect()
@@ -154,8 +178,13 @@ class CollapsibleFrame(QtWidgets.QWidget):
                 self._drawCircle(painter, icon_pos)
 
     def resizeEvent(self, event):
-        """ウィンドウのリサイズ時にフレームのジオメトリを更新"""
+        """
+        ウィンドウのリサイズ時にフレームのジオメトリを更新。
+        Args:
+            event (QResizeEvent): リサイズイベント
+        """
         super(CollapsibleFrame, self).resizeEvent(event)
+        
         # レイアウト内のフレームのサイズを更新
         margin = 0
         width  = self.width() - 2 * margin
@@ -166,213 +195,296 @@ class CollapsibleFrame(QtWidgets.QWidget):
     # public method
     # ------------------------------
     def addWidget(self, widget):
-        """コンテンツ領域にウィジェットを追加"""
+        """
+        コンテンツ領域にウィジェットを追加。
+        Args:
+            widget (QWidget): 追加するウィジェット
+        """
         self.content_layout.addWidget(widget)
         self._updateFrameMaxHeight()
 
     def insertWidget(self, index, widget):
-        """コンテンツ領域にウィジェットを挿入"""
+        """
+        コンテンツ領域にウィジェットを挿入。
+        Args:
+            index (int): 挿入位置
+            widget (QWidget): 挿入するウィジェット
+        """
         self.content_layout.insertWidget(index, widget)
         self._updateFrameMaxHeight()
         
     def removeWidget(self, widget):
-        """コンテンツ領域からウィジェットを削除"""
+        """
+        コンテンツ領域からウィジェットを削除。
+        Args:
+            widget (QWidget): 削除するウィジェット
+        """
         self.content_layout.removeWidget(widget)
         widget.setParent(None)
         self._updateFrameMaxHeight()
         
     def count(self):
-        """コンテンツ領域内のウィジェット数を返す"""
+        """
+        コンテンツ領域内のウィジェット数を返す。
+        Returns:
+            int: ウィジェット数
+        """
         return self.content_layout.count()
 
     def title(self):
-        """タイトル名を返す
+        """
+        タイトル名を返す。
         Returns:
-            string: タイトル名
-        """        
+            str: タイトル名
+        """ 
         return self._title
     
     def titleColor(self):
-        """タイトルのカラーを返す
+        """
+        タイトルのカラーを返す。
         Returns:
-            QtGui.QColor: 文字の色
-        """        
+            QColor: 文字の色
+        """
         return self._title_color
     
     def titleAlignment(self):
-        """タイトルの配置を返す
-
+        """
+        タイトルの配置を返す。
         Returns:
-            int: kAlignLeft = 0 kAlignRight = 1 kAlignCenter = 2
-        """        
+            int: 配置定数 kAlignLeft = 0 kAlignRight = 1 kAlignCenter = 2
+        """ 
         return self._title_alignment
     
     def titleVisible(self):
-        """タイトルの表示状態を返す
-
+        """
+        タイトルの表示状態を返す。
         Returns:
             bool: 表示状態
-        """   
+        """
         return self._is_title_visible
     
     def titleBarColor(self):
-        """タイトルバーの背景色を返す
-
+        """
+        タイトルバーの背景色を返す。
         Returns:
-            QtGui.QColor: 背景色
-        """        
+            QColor: 背景色
+        """ 
         return self._title_bar_color
     
     def titleBarHeight(self):
-        """タイトルバーの高さを返す
-
+        """
+        タイトルバーの高さを返す。
         Returns:
             int: タイトルバーの高さ
-        """        
+        """   
         return self._title_bar_height
     
     def iconColor(self):
-        """アイコンのカラーを返す
+        """
+        アイコンのカラーを返す。
         Returns:
-            QtGui.QColor: アイコンの色
-        """        
+            QColor: アイコンの色
+        """ 
         return self._icon_color    
     
     def iconAlignment(self):
-        """アイコンの配置を返す
-
+        """
+        アイコンの配置を返す。
         Returns:
-            int: kAlignLeft = 0 kAlignRight = 1 kAlignCenter = 2
-        """        
+            int: 配置定数 kAlignLeft = 0 kAlignRight = 1 kAlignCenter = 2
+        """  
         return self._icon_alignment
     
     def iconStyle(self):
-        """アイコンのスタイルを返す
-
+        """
+        アイコンのスタイルを返す。
         Returns:
-            int: kTriangle = 0 kPlusMinus = 1
-        """        
+            int: スタイル定数 kTriangle = 0 kPlusMinus = 1
+        """   
         return self._icon_style
     
     def iconVisible(self):
-        """アイコンの表示状態を返す
-
+        """
+        アイコンの表示状態を返す。
         Returns:
             bool: 表示状態
-        """   
+        """
         return self._is_icon_visible
     
     def frameStyle(self):
-        """フレームのスタイルを返す
-
+        """
+        フレームのスタイルを返す。
         Returns:
-            int: kDefault = 0 kSolid = 1 kRounded = 2 kDashed = 3
-        """        
+            int: スタイル定数 kDefault = 0 kSolid = 1 kRounded = 2 kDashed = 3
+        """     
         return self._frame_style
         
     def isCollapsed(self):
-        """フレームが折りたたまれているかどうか
-
+        """
+        フレームが折りたたまれているかどうか。
         Returns:
             bool: 折りたたみ状態
-        """        
+        """   
         return self._is_collapsed
     
     def isCollapsable(self):
-        """折りたたみが有効化どうか
-
+        """
+        折りたたみが有効かどうか。
         Returns:
-            bool: 有効化状態
-        """        
+            bool: 有効状態
+        """   
         return self._is_collapsable
     
     def isAnimationEnabled(self):
-        """アニメーションが有効化どうか
-
+        """
+        アニメーションが有効かどうか。
         Returns:
-            bool: 有効化状態
-        """        
+            bool: 有効状態
+        """     
         return self._is_animation_enabled
     
     def setTitle(self, title):
-        """タイトルを変更する"""
+        """
+        タイトルを変更する。
+        Args:
+            title (str): 新しいタイトル
+        """
         self._title = title
         self.update()
 
     def setTitleColor(self, color):
-        """タイトルの文字の色を変更する"""
+        """
+        タイトルの文字色を変更する。
+        Args:
+            color (QColor): 新しい色
+        """
         self._title_color = color
         self.update()
 
     def setTitleAlignment(self, alignment):
-        """タイトルの配置を変更 (0: kAlignLeft, 1: kAlignRight, 2: kAlignCenter)"""
+        """
+        タイトルの配置を変更する。
+        Args:
+            alignment (int): 配置定数 0: kAlignLeft, 1: kAlignRight, 2: kAlignCenter
+        """
         if alignment in [self.kAlignLeft, self.kAlignRight, self.kAlignCenter]:
             self._title_alignment = alignment
             self.update()
         
     def setTitleVisible(self, visible):
-        """タイトルの表示・非表示を切り替える"""
+        """
+        タイトルの表示・非表示を切り替える。
+        Args:
+            visible (bool): 表示状態
+        """
         self._is_title_visible = visible
         self.update()
         
     def setTitleBarColor(self, color):
-        """タイトルバーの背景色を変更"""
+        """
+        タイトルバーの背景色を変更する。
+        Args:
+            color (QColor): 新しい色
+        """
         self._title_bar_color = color
         self.update()
 
     def setTitleBarHeight(self, height):
-        """タイトルバーの高さを変更 最小15px"""
+        """
+        タイトルバーの高さを変更する。
+        Args:
+            height (int): 新しい高さ (最小15px)
+        """
         self._title_bar_height = max(15, height)
         self._updateTitleBarHeight()
         self._updateFrameMaxHeight()
         self.update()
 
     def setIconColor(self, color):
-        """アイコンの色を変更する"""
+        """
+        アイコンの色を変更する。
+        Args:
+            color (QColor): 新しい色
+        """
         self._icon_color = color
         self.update()
 
     def setIconAlignment(self, alignment):
-        """アイコンの配置を変更 (0: kAlignLeft, 1: kAlignRight, 2: kAlignCenter)"""
+        """
+        アイコンの配置を変更する。
+        Args:
+            alignment (int): 配置定数 0: kAlignLeft, 1: kAlignRight, 2: kAlignCenter
+        """
         if alignment in [self.kAlignLeft, self.kAlignRight, self.kAlignCenter]:
             self._icon_alignment = alignment
             self.update()
             
     def setIconStyle(self, style):
-        """アイコンの配置を変更 (0: left, 1: kArrow, 2: kPlusMinus, 3: kCircle)"""
+        """
+        アイコンのスタイルを変更する。
+        Args:
+            style (int): スタイル定数 0: kTriangle, 1: kArrow, 2: kPlusMinus, 3: kCircle
+        """
         if style in [self.kTriangle, self.kArrow, self.kPlusMinus, self.kCircle]:
             self._icon_style = style
             self.update()
 
     def setIconVisible(self, visible):
-        """タイトルの表示・非表示を切り替える"""
+        """
+        アイコンの表示・非表示を切り替える。
+        Args:
+            visible (bool): 表示状態
+        """
         self._is_icon_visible = visible
         self.update()
 
     def setFrameStyle(self, style):
-        """フレームのスタイルを変更"""
+        """
+        フレームのスタイルを変更する。
+        Args:
+            style (int): スタイル定数
+        """
         if style in [self.kDefault, self.kSolid, self.kRounded, self.kDashed]:
             self._frame_style = style
             self._updateFrameStyle()
 
     def setCollapsedEnabled(self, enabled):
-        """折りたたみの効化を変更"""
+        """
+        折りたたみの有効化を変更する。
+        Args:
+            enabled (bool): 有効状態
+        """
         self._is_collapsable = enabled
 
     def setAnimationEnabled(self, enabled):
-        """アニメーション有効化を変更"""
+        """
+        アニメーションの有効化を変更する。
+        Args:
+            enabled (bool): 有効状態
+        """
         self._is_animation_enabled = enabled
 
     def setContentsMargins(self, x, y, width, height):
+        """
+        コンテンツ領域のマージンを設定する。
+        Args:
+            x, y, width, height (int): マージン値
+        """
         self.content_layout.setContentsMargins(x, y, width, height)
 
     def setSpacing(self, spacing):
+        """
+        コンテンツ領域のウィジェット間スペースを設定する。
+        Args:
+            spacing (int): スペース幅
+        """
         self.content_layout.setSpacing(spacing)
 
     # ------------------------------
     # private method
     # ------------------------------
     def _updateTitleBarHeight(self):
+        """タイトルバー高さに応じてメインレイアウトのマージンを更新"""
         self.main_layout.setContentsMargins(0, self._title_bar_height, 0, 0)
     
     def _updateFrameStyle(self):
@@ -532,14 +644,37 @@ class CollapsibleFrame(QtWidgets.QWidget):
 
         painter.drawEllipse(center, 5, 5)
 
+    def _text_width(self, metrics, text):
+        """
+        PySide2/PySide6両対応でテキスト幅を取得
+        """
+        if hasattr(metrics, "horizontalAdvance"):
+            return metrics.horizontalAdvance(text)
+        else:
+            return metrics.width(text)
+
 class ContentsWidget(QtWidgets.QWidget):
+    """
+    CollapsibleFrameを複数管理するためのコンテナウィジェット。
+    
+    ・スクロールエリア内に複数のCollapsibleFrameを追加・削除可能
+    ・フレームの挿入・削除・タイトル変更などの管理機能を提供
+    """
     def __init__(self, parent=None):
+        """
+        ContentsWidgetの初期化。
+        Args:
+            parent (QWidget): 親ウィジェット
+        """
         super(ContentsWidget, self).__init__(parent)
         self._frames = [] 
         
         self.setup_ui()
         
     def setup_ui(self):
+        """
+        メインレイアウトとスクロールエリアの初期化。
+        """
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(5)
@@ -556,18 +691,38 @@ class ContentsWidget(QtWidgets.QWidget):
         self.content_layout.addStretch()
         
     def addFrame(self, title):
+        """
+        新しいCollapsibleFrameを追加。
+        Args:
+            title (str): フレームタイトル
+        Returns:
+            CollapsibleFrame: 追加されたフレーム
+        """
         frame = CollapsibleFrame(title, parent=self)
         self.content_layout.insertWidget(self.content_layout.count() - 1, frame)
         self._frames.append(frame)
         return frame
 
     def insertFrame(self, index, title):
+        """
+        指定位置にCollapsibleFrameを挿入。
+        Args:
+            index (int): 挿入位置
+            title (str): フレームタイトル
+        Returns:
+            CollapsibleFrame: 挿入されたフレーム
+        """
         frame = CollapsibleFrame(title, parent=self)
         self.content_layout.insertWidget(index, frame)
         self._frames.insert(index, frame)
         return frame
     
     def removeFrame(self, index):
+        """
+        指定インデックスのフレームを削除。
+        Args:
+            index (int): 削除位置
+        """
         if 0 <= index < len(self._frames):
             frame = self._frames[index]
             self.content_layout.removeWidget(frame)
@@ -575,40 +730,140 @@ class ContentsWidget(QtWidgets.QWidget):
             del self._frames[index]
             
     def clear(self):
+        """
+        すべてのフレームを削除。
+        """
         while self._frames:
             self.removeFrame(0)
             
     def frameCount(self):
+        """
+        フレーム数を返す。
+        Returns:
+            int: フレーム数
+        """
         return len(self._frames)
     
     def frame(self, index):
+        """
+        指定インデックスのフレームを返す。
+        Args:
+            index (int): フレームインデックス
+        Returns:
+            CollapsibleFrame or None: フレーム
+        """
         if 0 <= index < len(self._frames):
             return self._frames[index]
         return None 
     
     def indexOfTitle(self, title):
+        """
+        タイトル名からフレームのインデックスを返す。
+        Args:
+            title (str): フレームタイトル
+        Returns:
+            int: インデックス（見つからなければ-1）
+        """
         for i, f in enumerate(self._frames):
             if f.title() == title:
                 return i
         return -1
     
     def indexOf(self, frame):
+        """
+        フレームオブジェクトからインデックスを返す。
+        Args:
+            frame (CollapsibleFrame): 対象フレーム
+        Returns:
+            int: インデックス（見つからなければ-1）
+        """
         for i, f in enumerate(self._frames):
             if f == frame:
                 return i
         return -1
     
     def setContentsMargins(self, x, y, width, height):
+        """
+        コンテンツ領域のマージンを設定。
+        Args:
+            x, y, width, height (int): マージン値
+        """
         self.content_layout.setContentsMargins(x, y, width, height)
         
     def setSpacing(self, spacing):
+        """
+        コンテンツ領域のウィジェット間スペースを設定。
+        Args:
+            spacing (int): スペース幅
+        """
         self.content_layout.setSpacing(spacing)
         
     def setFrameTitle(self, index, title):
+        """
+        指定インデックスのフレームタイトルを変更。
+        Args:
+            index (int): フレームインデックス
+            title (str): 新しいタイトル
+        """
         if 0 <= index < len(self._frames):
             self.frame(index).setTitle(title)   
 
+class TabInfo:
+    """
+    タブ情報を管理するクラス。
+    
+    Attributes:
+        widget (QtWidgets.QWidget): タブに対応するウィジェット
+        _title (str): タブタイトル
+        _text_color (QtGui.QColor): タブの文字色
+    """
+    def __init__(self, widget, title, text_color=QtGui.QColor(200, 200, 200)):
+        self._widget = widget
+        self._title = title
+        self._text_color = text_color
+
+    def widget(self):
+        return self._widget
+
+    def title(self):
+        return self._title
+    
+    def textColor(self):
+        return self._text_color
+    
+    def setWidget(self, widget):
+        self._widget = widget
+    
+    def setTitle(self, title):
+        self._title = title
+        
+    def setTextColor(self, color):
+        self._text_color = QtGui.QColor(color)
+
+    def __repr__(self):
+        return f"TabInfo(title={self._title!r}, widget={type(self._widget).__name__}, text_color={self._text_color.name()})"
+    
+    def __eq__(self, other):
+        if not isinstance(other, TabInfo):
+            return False
+        return self.widget() == other.widget() and self.title() == other.title() and self.textColor() == other.textColor()
+
 class CustomTabBar(QtWidgets.QWidget):
+    """
+    カスタムタブバーウィジェット。
+    
+    ・タブの追加・削除・選択・タイトル変更が可能
+    ・タブのスクロール（ドラッグ/アニメーション）に対応
+    ・選択タブのハイライトバーをアニメーションで表示
+    ・タブのホバー/プレス状態の描画や色のカスタマイズが可能
+    ・タブの幅や間隔、下線、背景色なども調整可能
+    
+    シグナル:
+        currentChanged(int): 選択タブが変更されたとき
+        tabSelected(int): タブが選択されたとき
+        tabPressed(int): タブが押されたとき
+        tabReleased(int): タブが離されたとき
+    """
     currentChanged  = QtCore.Signal(int)
     tabSelected     = QtCore.Signal(int)
     tabPressed      = QtCore.Signal(int)
@@ -619,23 +874,23 @@ class CustomTabBar(QtWidgets.QWidget):
     # ------------------------------
     def __init__(self, parent=None):
         super(CustomTabBar, self).__init__(parent)
-        self._tabs                  = []  # list of dicts {'widget': widget, 'title': title}
+        self._tabs                  = []
         self._current_index         = -1
         self._scroll_offset         = 0
         self._scroll_anim_offset    = 0
         self._dragging              = False
         self._last_mouse_x          = 0
         self._pressed_tab           = -1
+        self._hovered_tab           = -1
         self._highlight_rect        = QtCore.QRectF()
         
         # カスタマイズ用プロパティ
-        self._selected_bar_color        = QtGui.QColor(0, 120, 215)
-        self._tab_text_color            = QtGui.QColor(200, 200, 200)
-        self._tab_text_selected_color   = QtGui.QColor(255, 255, 255)
-        self._tab_text_pressed_color    = QtGui.QColor(120, 120, 120)
+        self._highlight_bar_color        = QtGui.QColor(0, 120, 215)
+        self._tab_hovered_color         = QtGui.QColor(80, 80, 80)
+        self._background_color          = QtGui.QColor(68, 68, 68)
         self._tab_padding               = 30
         self._tab_spacing               = 2
-        self._highlight_height          = 2
+        self._highlight_bar_height          = 2
         self._bottom_line_color         = QtGui.QColor(180, 180, 180)
         self._bottom_line_width         = 0.2
                 
@@ -651,31 +906,56 @@ class CustomTabBar(QtWidgets.QWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         
     def sizeHint(self):
+        """
+        推奨されるウィジェットサイズを返す。
+        Returns:
+            QtCore.QSize: 推奨サイズ
+        """
         return QtCore.QSize(200, 40)
-    
+        
     def paintEvent(self, event):
+        """
+        タブバー全体の描画処理。
+        タブ、ハイライトバー、下線などをカスタム描画する。
+        """
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-
+        
+        # 背景描画
+        if self._background_color.isValid():
+            painter.fillRect(self.rect(), self._background_color)
+        else:
+            painter.fillRect(self.rect(), self.palette().window())
+        
+        # ホバー/プレス状態のタブ背景描画
+        for i, _ in enumerate(self._tabs):
+            if i == self._hovered_tab:
+                rect = self.tabRect(i)
+                painter.setBrush(self._tab_hovered_color)
+                painter.setPen(QtCore.Qt.NoPen)
+                painter.drawRect(rect)
+        
+        # タブタイトル描画
         for i, tab in enumerate(self._tabs):
             rect = self.tabRect(i)
-            painter.setPen(QtGui.QPen(self.tabTextColor(i)))
-            painter.drawText(rect, QtCore.Qt.AlignCenter, tab['title'])
+            painter.setPen(QtGui.QPen(self._tabTextColor(i)))
+            font = painter.font()
+            font.setBold(i == self._current_index)
+            painter.setFont(font)
+            painter.drawText(rect, QtCore.Qt.AlignCenter, tab.title())
             
-        # アニメーション用ハイライト
+        # ハイライトバー描画
+        highlight_rect = None
         if not self._highlight_rect.isNull():
             highlight_rect = QtCore.QRectF(self._highlight_rect)
-            highlight_rect.moveLeft(self._highlight_rect.left() - self._scroll_offset)
-            highlight_rect.moveRight(self._highlight_rect.right() - self._scroll_offset)
-            painter.setPen(QtCore.Qt.NoPen)
-            painter.setBrush(self._selected_bar_color)
-            painter.drawRoundedRect(highlight_rect, 2, 2)
+            highlight_rect.translate(-self._scroll_offset, 0)
             
         elif self._tabs and self._current_index >= 0:
-            rect = self.tabRect(self._current_index)
-            highlight_rect = QtCore.QRectF(rect.left(), rect.bottom() - self._highlight_height - 1, rect.width(), self._highlight_height)
+            highlight_rect = self._getHighlightRect(self._current_index)
+            
+        if highlight_rect is not None:
             painter.setPen(QtCore.Qt.NoPen)
-            painter.setBrush(self._selected_bar_color)
+            painter.setBrush(self._highlight_bar_color)
             painter.drawRoundedRect(highlight_rect, 2, 2)
             
         # タブバー下部に細いグレーのライン
@@ -684,8 +964,21 @@ class CustomTabBar(QtWidgets.QWidget):
         pen.setWidthF(self._bottom_line_width)
         painter.setPen(pen)
         painter.drawLine(0, self.height() - 1, self.width(), self.height() - 1)
+        
+    def leaveEvent(self, event):
+        """
+        マウスがタブバー領域から離れたときの処理。
+        ホバー状態を解除する。
+        """
+        self._hovered_tab = -1
+        self.update()
+        super().leaveEvent(event)
 
     def mousePressEvent(self, event):
+        """
+        マウスボタンが押されたときの処理。
+        タブのドラッグや押下状態の管理。
+        """
         if event.button() == QtCore.Qt.LeftButton:
             self._dragging = True
             self._last_mouse_x = event.x()
@@ -703,10 +996,15 @@ class CustomTabBar(QtWidgets.QWidget):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        """
+        マウス移動時の処理。
+        タブのドラッグによるスクロールやホバー状態の更新。
+        """
         if self._dragging:
+            self._pressed_tab = -1
             dx = event.x() - self._last_mouse_x
             self._last_mouse_x = event.x()
-            # 5ピクセル以上動いたらドラッグと判定
+            # 15ピクセル以上動いたらドラッグと判定
             if abs(event.x() - self._drag_start_pos.x()) > 15:
                 self._drag_moved = True
             self._scroll_offset -= dx
@@ -714,16 +1012,27 @@ class CustomTabBar(QtWidgets.QWidget):
             # 最大値制限
             total_width = 0
             font_metrics = self.fontMetrics()
-            padding = 30
             for tab in self._tabs:
-                total_width += font_metrics.horizontalAdvance(tab['title']) + padding + 2
+                total_width += self._text_width(font_metrics, tab.title()) + self._tab_padding + self._tab_spacing
             max_offset = max(0, total_width - self.width())
             self._scroll_offset = min(self._scroll_offset, max_offset)
             self.update()
             
+        for i in range(len(self._tabs)):
+            rect = self.tabRect(i)
+            if rect.contains(event.pos()):
+                if self._hovered_tab != i:
+                    self._hovered_tab = i
+                    self.update()
+                break
+            
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        """
+        マウスボタンが離されたときの処理。
+        タブの選択やドラッグ終了の管理。
+        """
         released_index = -1
         if self._dragging and not self._drag_moved:
             # ドラッグしていなければクリック判定
@@ -738,12 +1047,17 @@ class CustomTabBar(QtWidgets.QWidget):
         self._drag_moved = False
         self._pressed_tab = -1
         self.update()
+        
         if released_index != -1:
             self.tabReleased.emit(released_index)
             
         super().mouseReleaseEvent(event)
         
     def wheelEvent(self, event):
+        """
+        マウスホイール操作時の処理。
+        ホイールでタブの選択を移動する。
+        """
         # ホイールで選択タブも移動
         delta = event.angleDelta().y() if event.angleDelta().y() != 0 else event.angleDelta().x()
         if delta > 0:
@@ -754,19 +1068,65 @@ class CustomTabBar(QtWidgets.QWidget):
             # 次のタブ
             if self._current_index < len(self._tabs) - 1:
                 self.setCurrentIndex(self._current_index + 1)
+                
+        self._hovered_tab = -1
+        self.update()
         
+    def resizeEvent(self, event):
+        """
+        リサイズ時の処理。
+        横幅が変化した場合、タブ全体幅やオフセットを調整・出力する。
+        """
+        old_width = event.oldSize().width()
+        new_width = event.size().width()
+        if old_width != new_width:
+            # タブ全体の幅を計算
+            font_metrics = self.fontMetrics()
+            total_width = 0
+            for tab in self._tabs:
+                total_width += self._text_width(font_metrics, tab.title()) + self._tab_padding + self._tab_spacing
+
+            # オフセット調整
+            visible_width = total_width - self._scroll_offset
+            if visible_width < new_width:
+                diff = new_width - visible_width
+                self._scroll_offset = max(0, self._scroll_offset - diff)
+                
+        super().resizeEvent(event)
+                
     # ------------------------------
     # public methods
     # ------------------------------
-    def addTab(self, widget, title):
-        self._tabs.append({'widget': widget, 'title': title})
+    def addTab(self, widget, title, text_color=QtGui.QColor(200, 200, 200)):
+        """
+        タブを末尾に追加する。
+        Args:
+            widget (QWidget): タブに対応するウィジェット
+            title (str): タブタイトル
+            text_color (QColor, optional): タブのテキスト色
+        """
+        
+        self._tabs.append(TabInfo(widget, title, text_color))
         self.update()
     
-    def insertTab(self, index, widget, title):
-        self._tabs.insert(index, {'widget': widget, 'title': title})
+    def insertTab(self, index, widget, title, text_color=QtGui.QColor(200, 200, 200)):
+        """
+        指定位置にタブを挿入する。
+        Args:
+            index (int): 挿入位置
+            widget (QWidget): タブに対応するウィジェット
+            title (str): タブタイトル
+            text_color (QColor, optional): タブのテキスト色
+        """
+        self._tabs.insert(index, TabInfo(widget, title, text_color))
         self.update()
     
     def removeTab(self, index):
+        """
+        指定したインデックスのタブを削除する。
+        Args:
+            index (int): 削除するタブのインデックス
+        """
         if 0 <= index < len(self._tabs):
             del self._tabs[index]
             if self._current_index >= len(self._tabs):
@@ -774,61 +1134,145 @@ class CustomTabBar(QtWidgets.QWidget):
             self.update()
     
     def currentIndex(self):
+        """
+        現在選択されているタブのインデックスを返す。
+        Returns:
+            int: 選択中のタブインデックス
+        """
         return self._current_index
     
     def tabCount(self):
+        """
+        タブの総数を返す。
+        Returns:
+            int: タブ数
+        """
         return len(self._tabs)
     
     def tabText(self, index):
+        """
+        指定インデックスのタブタイトルを返す。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            str: タブタイトル
+        """
         if 0 <= index < len(self._tabs):
-            return self._tabs[index]['title']
+            return self.tab(index).title()
         return ""
     
     def setTabText(self, index, title): 
+        """
+        指定インデックスのタブタイトルを変更する。
+        Args:
+            index (int): タブインデックス
+            title (str): 新しいタイトル
+        """
         if 0 <= index < len(self._tabs):
-            self._tabs[index]['title'] = title
+            self.tab(index).setTitle(title)
             self.update()
     
     def widget(self, index):    
+        """
+        指定インデックスのタブに対応するウィジェットを返す。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            QWidget: 対応ウィジェット
+        """
         if 0 <= index < len(self._tabs):
-            return self._tabs[index]['widget']
+            return self.tab(index).widget()
         return None
     
     def indexOf(self, widget):
+        """
+        指定ウィジェットに対応するタブのインデックスを返す。
+        Args:
+            widget (QWidget): 対象ウィジェット
+        Returns:
+            int: インデックス（見つからなければ-1）
+        """
         for i, tab in enumerate(self._tabs):
-            if tab['widget'] == widget:
+            if tab.widget() == widget:
                 return i
         return -1
     
     def clear(self): 
+        """
+        すべてのタブを削除する。
+        """
         self._tabs = []
         self._current_index = -1
         self.update()
         
-    def tabRect(self, index):
+    def tab(self, index):
+        """
+        指定インデックスのタブ情報を返す。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            TabInfo: タブ情報オブジェクト
+        """
+        if 0 <= index < len(self._tabs):
+            return self._tabs[index]
+        return None
+        
+    def tabTextColor(self, index):
+        """
+        タブごとの文字色を返す。個別設定があればそれを優先。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            QtGui.QColor: テキスト色
+        """
+        if 0 <= index < len(self._tabs):
+            return self.tab(index).textColor()
+        
+    def tabRect(self, index, offset=True):
+        """
+        指定したタブの矩形を返す。
+        Args:
+            index (int): タブインデックス
+            offset (bool): オフセットを適用するか
+        Returns:
+            QtCore.QRect: タブの矩形
+        """
+        """
+        指定したタブの矩形を返す。
+        offset=True で現在のスクロール/アニメーションオフセットを適用。
+        offset=False でオフセットなしの絶対位置を返す。
+        """
         font_metrics = self.fontMetrics()
         height = self.height()
-        x = -self._getCurrentOffset()
+        x = 0
+        if offset:
+            x -= self._getCurrentOffset()
         for i, tab in enumerate(self._tabs):
-            title = tab['title']
-            width = font_metrics.horizontalAdvance(title) + self._tab_padding
+            width = self._text_width(font_metrics, tab.title()) + self._tab_padding
             x += self._tab_spacing
             rect = QtCore.QRect(x, 0, width, height)
             if i == index:
                 return rect
             x += width
-            
         return QtCore.QRect()
-    
-    def tabTextColor(self, index):
-        if index == self._pressed_tab:
-            return self._tab_text_pressed_color
-        elif index == self._current_index:
-            return self._tab_text_selected_color
-        else:
-            return self._tab_text_color
+            
+    def setTabTextColor(self, index, color):
+        """
+        タブごとの文字色を設定する。
+        Args:
+            index (int): タブインデックス
+            color (QColor or str): 色
+        """
+        if 0 <= index < len(self._tabs):
+            self.tab(index).setTextColor(color)
+            self.update()
         
     def setCurrentIndex(self, index):
+        """
+        指定インデックスのタブを選択状態にする。
+        Args:
+            index (int): 選択するタブインデックス
+        """
         if 0 <= index < len(self._tabs):
             old_index = self._current_index
             self._current_index = index
@@ -840,84 +1284,191 @@ class CustomTabBar(QtWidgets.QWidget):
             self.currentChanged.emit(index)
     
     def setTabPadding(self, padding):
+        """
+        タブのパディング幅を設定する。
+        Args:
+            padding (int): パディング幅
+        """
         self._tab_padding = padding
         self.update()
         
     def setTabSpacing(self, spacing):
+        """
+        タブ間のスペースを設定する。
+        Args:
+            spacing (int): スペース幅
+        """
         self._tab_spacing = spacing
         self.update()
         
-    def setTabTextColor(self, color):
-        self._tab_text_color = QtGui.QColor(color)
+    def setTabTextColor(self, index, color):
+        """
+        タブの通常テキスト色を設定する。
+        Args:
+            index (int): タブインデックス
+            color (QColor or str): 色
+        """
+        if 0 <= index < len(self._tabs):
+            self.tab(index).setTextColor(color)
         self.update()
         
-    def setTabTextSelectedColor(self, color):
-        self._tab_text_selected_color = QtGui.QColor(color)
+    def setTabHoveredColor(self, color):
+        """
+        ホバー時のタブ背景色を設定する。
+        Args:
+            color (QColor or str): 色
+        """
+        self._tab_hovered_color = QtGui.QColor(color)
         self.update()
         
-    def setTabTextPressedColor(self, color):
-        self._tab_text_pressed_color = QtGui.QColor(color)
+    def setBackgroundColor(self, color):
+        """
+        タブバー全体の背景色を設定する。
+        Args:
+            color (QColor or str): 色
+        """
+        self._background_color = QtGui.QColor(color)
         self.update()
         
-    def setHighlightColor(self, color):
-        self._selected_bar_color = QtGui.QColor(color)
+    def setHighlightBarColor(self, color):
+        """
+        ハイライトバーの色を設定する。
+        Args:
+            color (QColor or str): 色
+        """
+        self._highlight_bar_color = QtGui.QColor(color)
         self.update()
         
-    def setHighlightHeight(self, height):
-        self._highlight_height = height
+    def setHighlightBarHeight(self, height):
+        """
+        ハイライトバーの高さを設定する。
+        Args:
+            height (int): 高さ
+        """
+        self._highlight_bar_height = height
         self.update()
         
     def setBottomLineColor(self, color):
+        """
+        タブバー下部のライン色を設定する。
+        Args:
+            color (QColor or str): 色
+        """
         self._bottom_line_color = QtGui.QColor(color)
         self.update()
         
     def setBottomLineWidth(self, width):
+        """
+        タブバー下部のライン幅を設定する。
+        Args:
+            width (float): ライン幅
+        """
         self._bottom_line_width = width
         self.update()
-
+        
     # ------------------------------
     # private methods
     # ------------------------------
+    def _tabTextColor(self, index):
+        """
+        タブの状態に応じたテキスト色を返す。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            QtGui.QColor: テキスト色
+        """
+        if index == self._pressed_tab:
+            return self.tab(index).textColor().darker(120)
+        elif index == self._current_index:
+            return self.tab(index).textColor().lighter(120)
+        else:
+            return self.tab(index).textColor()
+        
+    def _text_width(self, metrics, text):
+        """
+        PySide2/PySide6両対応でテキスト幅を取得
+        """
+        if hasattr(metrics, "horizontalAdvance"):
+            return metrics.horizontalAdvance(text)
+        else:
+            return metrics.width(text)
+    
     def _getCurrentOffset(self):
+        """
+        現在のスクロール/アニメーションオフセット値を返す。
+        Returns:
+            int or float: オフセット値
+        """
         return self._scroll_anim_offset if self._scroll_anim.state() == QtCore.QAbstractAnimation.Running else self._scroll_offset
     
+    def _getHighlightRect(self, index, offset=True):
+        """
+        指定インデックスのタブのタイトル幅に合わせたハイライトバーの矩形を返す。
+        """
+        if not (0 <= index < len(self._tabs)):
+            return QtCore.QRectF()
+        
+        tab = self._tabs[index]
+        tab_rect = self.tabRect(index, offset=offset)
+        font = self.font()
+        font.setBold(index == self._current_index)
+        metrics = QtGui.QFontMetrics(font)
+        text_width = self._text_width(metrics, tab.title())
+        bar_width = text_width + 8  # 余白
+        bar_height = self._highlight_bar_height
+        bar_x = tab_rect.x() + (tab_rect.width() - bar_width) // 2
+        bar_y = tab_rect.bottom() - bar_height + 1
+        
+        return QtCore.QRectF(bar_x, bar_y, bar_width, bar_height)
+    
     def _on_highlight_anim(self, value):
+        """
+        ハイライトバーアニメーションの値が変化したときの処理。
+        Args:
+            value (QRectF): 新しいハイライト矩形
+        """
         self._highlight_rect = value
         self.update()
     
     def _scroll_to_tab(self, index):
+        """
+        指定インデックスのタブが見切れている場合に自動でスクロールする。
+        Args:
+            index (int): 対象タブインデックス
+        """
         # 選択タブが見切れている場合に自動でスクロール
         if not self._tabs:
             return
         font_metrics = self.fontMetrics()
         height = self.height()
-        padding = 30
+
         x = 0
         for i, tab in enumerate(self._tabs):
-            title = tab['title']
-            width = font_metrics.horizontalAdvance(title) + padding
-            x += 2
+            width = self._text_width(font_metrics, tab.title()) + self._tab_padding
+            x += self._tab_spacing
             rect = QtCore.QRect(x, 0, width, height)
             if i == index:
                 tab_rect = rect
             x += width
+            
         left_visible = self._scroll_offset
         right_visible = self._scroll_offset + self.width()
         left_margin = 100
         right_margin = 100
         target_offset = self._scroll_offset
-        # 左側が見切れている
-        if tab_rect.left() < left_visible + left_margin:
+        
+        if tab_rect.left() < left_visible + left_margin: # 左側が見切れている
             target_offset = max(tab_rect.left() - left_margin, 0)
-        # 右側が見切れている
-        elif tab_rect.right() > right_visible - right_margin:
+            
+        elif tab_rect.right() > right_visible - right_margin: # 右側が見切れている
             target_offset = tab_rect.right() - self.width() + right_margin
             # 最大値制限
             total_width = 0
             for tab in self._tabs:
-                total_width += font_metrics.horizontalAdvance(tab['title']) + padding + 2
+                total_width += self._text_width(font_metrics, tab.title()) + self._tab_padding + self._tab_spacing
             max_offset = max(0, total_width - self.width())
             target_offset = min(target_offset, max_offset)
+            
         # アニメーション
         if target_offset != self._scroll_offset:
             self._scroll_anim.stop()
@@ -930,37 +1481,29 @@ class CustomTabBar(QtWidgets.QWidget):
             self.update()
 
     def _on_scroll_anim(self, value):
+        """
+        スクロールアニメーションの値が変化したときの処理。
+        Args:
+            value (int or float): 新しいオフセット値
+        """
         self._scroll_anim_offset = value
         self.update()
 
     def _start_highlight_animation(self, old_index, new_index):
+        """
+        ハイライトバーのアニメーションを開始する。
+        Args:
+            old_index (int): 以前の選択タブインデックス
+            new_index (int): 新しい選択タブインデックス
+        """
         if old_index == new_index or old_index < 0 or new_index < 0 or not self._tabs:
             self._highlight_rect = QtCore.QRectF()
             self.update()
             return
-        font_metrics = self.fontMetrics()
-        height = self.height()
-        padding = 30
+        # オフセットなしの絶対位置で矩形を取得
+        old_highlight = self._getHighlightRect(old_index, offset=False)
+        new_highlight = self._getHighlightRect(new_index, offset=False)
         
-        # 古いタブと新しいタブの矩形を取得
-        old_rect = QtCore.QRect()
-        new_rect = QtCore.QRect()
-        
-        x = 0
-        for i, tab in enumerate(self._tabs):
-            title = tab['title']
-            width = font_metrics.horizontalAdvance(title) + padding
-            x += 2
-            rect = QtCore.QRect(x, 0, width, height)
-            if i == old_index:
-                old_rect = rect
-            if i == new_index:
-                new_rect = rect
-            x += width
-            
-        highlight_height = self._highlight_height
-        old_highlight = QtCore.QRectF(old_rect.left(), old_rect.bottom() - highlight_height - 1, old_rect.width(), highlight_height)
-        new_highlight = QtCore.QRectF(new_rect.left(), new_rect.bottom() - highlight_height - 1, new_rect.width(), highlight_height)
         self._highlight_anim.stop()
         self._highlight_anim.setStartValue(old_highlight)
         self._highlight_anim.setEndValue(new_highlight)
@@ -968,69 +1511,163 @@ class CustomTabBar(QtWidgets.QWidget):
         self._highlight_anim.start()
     
 class CustomTabWidget(QtWidgets.QWidget):
+    """
+    カスタムタブバー(CustomTabBar)とスタックウィジェットを組み合わせたタブウィジェット。
+    
+    ・タブの追加・削除・選択・タイトル変更が可能
+    ・タブごとに異なるウィジェットを表示できる
+    ・CustomTabBarのシグナルと連携
+    """
     def __init__(self, parent=None):
+        """
+        CustomTabWidgetの初期化。
+        Args:
+            parent (QWidget): 親ウィジェット
+        """
         super(CustomTabWidget, self).__init__(parent)
         self.setup_ui()
         self.connectSignals()
          
     def setup_ui(self):
+        """
+        レイアウトとタブバー・スタックウィジェットの初期化。
+        """
         layout = QtWidgets.QVBoxLayout(self)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        self._header = CustomTabBar(self)
-        layout.addWidget(self._header)
+        self._tab_bar = CustomTabBar(self)
+        layout.addWidget(self._tab_bar)
         
         self._stack = QtWidgets.QStackedWidget(self)
         layout.addWidget(self._stack)
                 
     def connectSignals(self):
-        self._header.currentChanged.connect(self._stack.setCurrentIndex)
+        """
+        タブバーのシグナルとスタックウィジェットを接続。
+        """
+        self._tab_bar.currentChanged.connect(self._stack.setCurrentIndex)
         
-    def addTab(self, widget, title):
-        self._header.addTab(widget, title)
+    def addTab(self, widget, title, text_color=QtGui.QColor(200, 200, 200)):
+        """
+        タブと対応ウィジェットを追加。
+        Args:
+            widget (QWidget): 追加するウィジェット
+            title (str): タブタイトル
+            text_color (QColor, optional): タブのテキスト色
+        """
+        self._tab_bar.addTab(widget, title, text_color)
         self._stack.addWidget(widget)
-        if self._header.tabCount() == 1:
-            self._header.setCurrentIndex(0)
-    
-    def insertTab(self, index, widget, title):
-        self._header.insertTab(index, widget, title)
+        if self._tab_bar.tabCount() == 1:
+            self._tab_bar.setCurrentIndex(0)
+
+    def insertTab(self, index, widget, title, text_color=QtGui.QColor(200, 200, 200)):
+        """
+        指定位置にタブとウィジェットを挿入。
+        Args:
+            index (int): 挿入位置
+            widget (QWidget): 挿入するウィジェット
+            title (str): タブタイトル
+            text_color (QColor, optional): タブのテキスト色
+        """
+        self._tab_bar.insertTab(index, widget, title, text_color)
         self._stack.insertWidget(index, widget)
     
     def removeTab(self, index):
-        self._header.removeTab(index)
+        """
+        指定インデックスのタブとウィジェットを削除。
+        Args:
+            index (int): 削除位置
+        """
+        self._tab_bar.removeTab(index)
         widget = self._stack.widget(index)
         self._stack.removeWidget(widget)
     
     def setCurrentIndex(self, index):
-        self._header.setCurrentIndex(index)
+        """
+        指定インデックスのタブを選択状態にする。
+        Args:
+            index (int): 選択するタブインデックス
+        """
+        self._tab_bar.setCurrentIndex(index)
     
     def currentIndex(self):
-        return self._header.currentIndex()
+        """
+        現在選択されているタブのインデックスを返す。
+        Returns:
+            int: 選択中のタブインデックス
+        """
+        return self._tab_bar.currentIndex()
     
     def tabCount(self):
-        return self._header.tabCount()
+        """
+        タブの総数を返す。
+        Returns:
+            int: タブ数
+        """
+        return self._tab_bar.tabCount()
     
     def tabText(self, index):
-        return self._header.tabText(index)
+        """
+        指定インデックスのタブタイトルを返す。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            str: タブタイトル
+        """
+        return self._tab_bar.tabText(index)
     
     def setTabText(self, index, title): 
-        self._header.setTabText(index, title)
+        """
+        指定インデックスのタブタイトルを変更する。
+        Args:
+            index (int): タブインデックス
+            title (str): 新しいタイトル
+        """
+        self._tab_bar.setTabText(index, title)
     
     def widget(self, index):    
-        return self._header.widget(index)
+        """
+        指定インデックスのタブに対応するウィジェットを返す。
+        Args:
+            index (int): タブインデックス
+        Returns:
+            QWidget: 対応ウィジェット
+        """
+        return self._tab_bar.widget(index)
     
     def indexOf(self, widget):
-        return self._header.indexOf(widget)
+        """
+        指定ウィジェットに対応するタブのインデックスを返す。
+        Args:
+            widget (QWidget): 対象ウィジェット
+        Returns:
+            int: インデックス（見つからなければ-1）
+        """
+        return self._tab_bar.indexOf(widget)
     
     def clear(self): 
-        self._header.clear()
+        """
+        すべてのタブとウィジェットを削除する。
+        """
+        self._tab_bar.clear()
         while self._stack.count() > 0:
             widget = self._stack.widget(0)
             self._stack.removeWidget(widget)
 
 class TestMainWindow(QtWidgets.QMainWindow):
+    """
+    サンプル用のメインウィンドウ。
+    
+    ・CustomTabWidgetを中心に、各種サンプルタブ・フレームを配置
+    ・UIの初期化やレイアウト設定を行う
+    """
     def __init__(self, parent=None):
+        """
+        TestMainWindowの初期化。
+        Args:
+            parent (QWidget): 親ウィジェット
+        """
         super(TestMainWindow, self).__init__(parent)
 
         self.setWindowTitle(WINDOW_TITLE)
@@ -1040,6 +1677,9 @@ class TestMainWindow(QtWidgets.QMainWindow):
         self.setup_ui()
         
     def setup_ui(self):
+        """
+        メインウィンドウのUI初期化とレイアウト設定。
+        """
         self.central_widget = QtWidgets.QWidget(self)
         self._layout = QtWidgets.QVBoxLayout(self.central_widget)
         self._layout.setSpacing(5)
@@ -1066,7 +1706,7 @@ class TestMainWindow(QtWidgets.QMainWindow):
                     f.addWidget(new_label)
                 add_btn.clicked.connect(lambda *args, f=frame: add_widget(f))
                 frame.addWidget(add_btn)
-        self.tab_widget.addTab(contents1, "Default")
+        self.tab_widget.addTab(contents1, "Default", QtGui.QColor(200, 200, 200))
 
         # 2. Solid枠・タイトル色変更
         contents2 = ContentsWidget()
@@ -1086,7 +1726,7 @@ class TestMainWindow(QtWidgets.QMainWindow):
                 add_btn.clicked.connect(lambda *args, f=frame: add_widget(f))
                 frame.addWidget(add_btn)
             contents2.main_layout.insertWidget(contents2.main_layout.count() - 1, frame)
-        self.tab_widget.addTab(contents2, "Solid & Blue Title")
+        self.tab_widget.addTab(contents2, "Solid & Blue Title", QtGui.QColor(0, 220, 215))
 
         # 3. Rounded枠・アイコン右・タイトル中央
         contents3 = ContentsWidget()
@@ -1107,7 +1747,7 @@ class TestMainWindow(QtWidgets.QMainWindow):
                 add_btn.clicked.connect(lambda *args, f=frame: add_widget(f))
                 frame.addWidget(add_btn)
             contents3.main_layout.insertWidget(contents3.main_layout.count() - 1, frame)
-        self.tab_widget.addTab(contents3, "Rounded & Center Title")
+        self.tab_widget.addTab(contents3, "Rounded & Center Title", QtGui.QColor(150, 0, 150))
 
         # 4. Dashed枠・アイコンスタイル変更
         contents4 = ContentsWidget()
@@ -1127,7 +1767,7 @@ class TestMainWindow(QtWidgets.QMainWindow):
                 add_btn.clicked.connect(lambda *args, f=frame: add_widget(f))
                 frame.addWidget(add_btn)
             contents4.main_layout.insertWidget(contents4.main_layout.count() - 1, frame)
-        self.tab_widget.addTab(contents4, "Dashed & Icon Style")
+        self.tab_widget.addTab(contents4, "Dashed & Icon Style", QtGui.QColor(0, 150, 150))
 
         # 5. タイトルバー色・アニメーション無効
         contents5 = ContentsWidget()
@@ -1147,7 +1787,7 @@ class TestMainWindow(QtWidgets.QMainWindow):
                 add_btn.clicked.connect(lambda *args, f=frame: add_widget(f))
                 frame.addWidget(add_btn)
             contents5.main_layout.insertWidget(contents5.main_layout.count() - 1, frame)
-        self.tab_widget.addTab(contents5, "No Animation")
+        self.tab_widget.addTab(contents5, "No Animation", QtGui.QColor(150, 100, 0))
 
         # 6. タイトル非表示・アイコンのみ
         contents6 = ContentsWidget()
@@ -1167,15 +1807,8 @@ class TestMainWindow(QtWidgets.QMainWindow):
                 add_btn.clicked.connect(lambda *args, f=frame: add_widget(f))
                 frame.addWidget(add_btn)
             contents6.main_layout.insertWidget(contents6.main_layout.count() - 1, frame)
-        self.tab_widget.addTab(contents6, "Icon Only")
+        self.tab_widget.addTab(contents6, "Icon Only", QtGui.QColor(100, 150, 0))
 
-        # 7. タブバーの色・高さ・文字色変更
-        self.tab_widget._header.setHighlightColor(QtGui.QColor(255, 100, 100))
-        self.tab_widget._header.setHighlightHeight(4)
-        self.tab_widget._header.setTabTextColor(QtGui.QColor(50, 200, 50))
-        self.tab_widget._header.setTabTextSelectedColor(QtGui.QColor(255, 255, 255))
-        self.tab_widget._header.setTabTextPressedColor(QtGui.QColor(100, 100, 100))
-                  
 def main():
     maya_main_window = wrapInstance(int(omui.MQtUtil.mainWindow()), QtWidgets.QWidget)
     this_win = maya_main_window.findChild(QtWidgets.QWidget, OBJECT_NAME)
